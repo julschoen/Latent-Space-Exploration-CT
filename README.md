@@ -8,5 +8,5 @@
 [2] Voynov, A., & Babenko, A. (2020, November). Unsupervised discovery of interpretable directions in the gan latent space. In International Conference on Machine Learning (pp. 9786-9796). PMLR.
 
 # Credits
-The VAE implementation is based on https://github.com/LukeDitria/CNN-VAE
+The VAE implementation is based on https://github.com/LukeDitria/CNN-VAE  
 The Latent Direction Discovery is based on https://github.com/anvoynov/GANLatentDiscovery
