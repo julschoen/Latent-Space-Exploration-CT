@@ -100,12 +100,7 @@ class Encoder(nn.Module):
             prior = Independent(Normal(loc=self.mu_0, scale=self.sigma_0), 1)
 
             # Estimate the KLD between q(z|x)|| p(z)
-
-            kl = KLD(posterior, prior).sum()
-            kl = torch.div(kl, x.shape[0] * 100)
-
-            # z shape:
-            ## torch.Size([128, 100, 1, 1])
+            kl = KLD(posterior, prior).mean()
 
         else:
             mu = self.conv_mu(x)
@@ -114,6 +109,8 @@ class Encoder(nn.Module):
 
             posterior = Independent(Normal(loc=mu, scale=sigma), 1)
             z = posterior.rsample()
+            kl = None
+            
         return kl, z
 
 
@@ -149,7 +146,7 @@ class Decoder(nn.Module):
 
 
 class VAE(nn.Module):
-    def __init__(self, channel_in=1, z=100, device='cpu'):
+    def __init__(self, channel_in=1, z=32, device='cpu'):
         super(VAE, self).__init__()
         """Res VAE Network
         channel_in  = number of channels of the image 
