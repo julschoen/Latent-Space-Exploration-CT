@@ -29,7 +29,7 @@ class LOGMSELoss(nn.Module):
         return torch.log(self.mse(input, target))
 
 
-vae = VAE()
+vae = VAE(device=device)
 vae.to(device)
 criterion = LOGMSELoss()
 optimizer = torch.optim.Adam(vae.parameters(), lr=1e-4)
