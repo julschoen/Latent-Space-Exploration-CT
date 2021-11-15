@@ -34,7 +34,7 @@ vae.to(device)
 criterion = LOGMSELoss()
 optimizer = torch.optim.Adam(vae.parameters(), lr=1e-4)
 
-beta = 1e-2 / (2 ** 5)
+beta = 1e-3 / (2 ** 5)
 
 # Stats
 losses = []
