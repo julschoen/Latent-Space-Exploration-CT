@@ -1,4 +1,4 @@
-# Unsupervised Exploration of Latent Directions of Generative Models on Medical Data
+# Interpreting Latent Spaces of Generative Models for Medical Images using Unsupervised Methods
 * Data: LIDC [1]
 * Both a DCGAN and a Res-Net based CNN-VAE are implemented
 * Model agnostic unsuperivesided exploration of the latent space of a generative model [2]
