@@ -14,8 +14,6 @@
 * We see non-trivial image transformations on medical images.
 * Many such directions are provided in [Animations](Animations)
 * Some examples are the following:
-Here are some examples of generated images manipulation by moving along discovered directions:
-
 ![An image](./Animations/examples/z_position.gif)
 
 _VAE - z-Position_
