@@ -50,6 +50,8 @@ fid_epoch = []
 iters = 0
 epochs = 50
 path = 'vae_log'
+if not os.path.exists(path):
+    os.makedirs(path)
 
 print("Starting Training Loop...")
 for epoch in range(epochs):
@@ -79,7 +81,6 @@ for epoch in range(epochs):
             print('[%d/%d][%d/%d]\tRec Loss: %.4f\tKL Divergence: %.4f\tKL %.4f\tFID: %.4f'
                     % (epoch+1, epochs, i, len(generator_train),rec_loss,beta*kl, kl,fid[-1]))
             _, z = vae.encoder(data)
-            print(f'Z Mean: {z.mean()}, Std: {z.std()}')
             torchvision.utils.save_image(
                 vutils.make_grid(pred, padding=2, normalize=True)
                 , os.path.join(path, f'{iters}.png'))

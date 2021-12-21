@@ -121,10 +121,10 @@ class Decoder(nn.Module):
     
 #VAE network, uses the above encoder and decoder blocks 
 class VAE(nn.Module):
-    def __init__(self, channel_in=1, z = 32):
+    def __init__(self, device, channel_in=1, z = 32):
         super(VAE, self).__init__()
-        self.encoder = Encoder(channel_in, z = z)
-        self.decoder = Decoder(channel_in, z = z)
+        self.encoder = Encoder(channel_in, z = z).to(device)
+        self.decoder = Decoder(channel_in, z = z).to(device)
 
     def forward(self, x, Train = True):
         kl, z = self.encoder(x, Train)
