@@ -205,7 +205,7 @@ def make_interpolation_chart(G, deformator=None, z=None,
     if dims is None:
         dims = range(dims_count)
     for i in dims:
-        imgs.append(interpolate(G, z, shifts_r, shifts_count, i, deformator))
+        imgs.append(interpolate(G, z, shifts_r, shifts_count, i, deformator, device=device))
 
     rows_count = len(imgs) + 1
     fig, axs = plt.subplots(rows_count, **kwargs)
@@ -244,7 +244,7 @@ def inspect_all_directions(G, deformator, out_dir, zs=None, num_z=3, shifts_r=8.
             fig = make_interpolation_chart(
                 G, deformator=deformator, z=z,
                 shifts_count=shifts_count, dims=dims, shifts_r=shifts_r,
-                dpi=250, figsize=(int(shifts_count * 4.0), int(0.5 * step) + 2))
+                dpi=250, figsize=(int(shifts_count * 4.0), int(0.5 * step) + 2), device=device)
             fig.canvas.draw()
             plt.close(fig)
             img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
