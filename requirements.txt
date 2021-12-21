@@ -1,0 +1,10 @@
+torchvision==0.11.1
+numpy==1.19.5
+torch==1.10.0
+matplotlib==3.2.2
+tqdm==4.62.3
+Pillow==8.2.0
+tensorboardX==2.4.1
+opencv-python==4.1.2.30
+pydicom==2.2.2
+pytorch-fid-wrapper==0.0.4
