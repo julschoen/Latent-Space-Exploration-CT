@@ -43,6 +43,7 @@ args = {
     'gen_path': 'gan_log/checkpoint.pt',
     'def_random_init': True,
     'gen': 'gan'
+    'n_steps': int(3e+3)
 }
 
 save_run_params(args)
@@ -52,13 +53,14 @@ if args['gen'] == 'gan':
 else:
     G = make_vae(args['gen_path'])
 
-deformator = LatentDeformator(shift_dim=100,
+deformator = LatentDeformator(shift_dim=G.dim_z,
                               input_dim=args['directions_count'],
+                              out_dim=G.dim_z,
                               type=DEFORMATOR_TYPE_DICT[args['deformator']],
                               random_init=args['def_random_init']).to(device)
 
 if args['shift_predictor'] == 'ResNet':
-    shift_predictor = ResNetShiftPredictor(deformator.input_dim, 1).to(device)
+    shift_predictor = ResNetShiftPredictor(deformator.input_dim).to(device)
 else:
     shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
 

@@ -53,6 +53,10 @@ def save_hook(module, input, output):
     setattr(module, 'output', output)
 
 
+def save_hook(module, input, output):
+    setattr(module, 'output', output)
+
+
 class ResNetShiftPredictor(nn.Module):
     def __init__(self, dim):
         super(ResNetShiftPredictor, self).__init__()

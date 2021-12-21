@@ -15,14 +15,14 @@ class Params(object):
 
         self.deformator_lr = 0.0001
         self.shift_predictor_lr = 0.0001
-        self.n_steps = int(1e+5)
-        self.batch_size = 256
+        self.n_steps = int(3e+3)
+        self.batch_size = 128
 
         self.directions_count = None
         self.max_latent_dim = None
 
         self.label_weight = 1.0
-        self.shift_weight = 0.1
+        self.shift_weight = 0.25
 
         self.steps_per_log = 10
         self.steps_per_save = 10000
@@ -37,7 +37,7 @@ class Params(object):
 
 
 class Trainer(object):
-    def __init__(self, params=Params(), out_dir='', verbose=False, device='cpu'):
+    def __init__(self, device, params=Params(), out_dir='', verbose=False):
         if verbose:
             print('Trainer inited with:\n{}'.format(str(params.__dict__)))
         self.p = params
@@ -45,7 +45,6 @@ class Trainer(object):
         os.makedirs(self.log_dir, exist_ok=True)
         self.cross_entropy = nn.CrossEntropyLoss()
 
-        self.device = device
         tb_dir = os.path.join(out_dir, 'tensorboard')
         self.models_dir = os.path.join(out_dir, 'models')
         self.images_dir = os.path.join(self.log_dir, 'images')
@@ -57,6 +56,7 @@ class Trainer(object):
         self.writer = SummaryWriter(tb_dir)
         self.out_json = os.path.join(self.log_dir, 'stat.json')
         self.fixed_test_noise = None
+        self.device = device
 
     def make_shifts(self, latent_dim):
         target_indices = torch.randint(
@@ -102,7 +102,7 @@ class Trainer(object):
         for z, prefix in zip([noise, self.fixed_test_noise], ['rand', 'fixed']):
             fig = make_interpolation_chart(
                 G, deformator, z=z, shifts_r=3 * self.p.shift_scale, shifts_count=3, dims_count=15,
-                device=self.device, dpi=500)
+                dpi=500)
 
             self.writer.add_figure('{}_deformed_interpolation'.format(prefix), fig, step)
             fig_to_image(fig).convert("RGB").save(
@@ -136,7 +136,7 @@ class Trainer(object):
         deformator.eval()
         shift_predictor.eval()
 
-        accuracy = validate_classifier(G, deformator, shift_predictor, trainer=self, device=self.device)
+        accuracy = validate_classifier(G, deformator, shift_predictor, trainer=self)
         self.writer.add_scalar('accuracy', accuracy.item(), step)
 
         deformator.train()
@@ -158,17 +158,26 @@ class Trainer(object):
         if step % self.p.steps_per_save == 0 and step > 0:
             self.save_models(deformator, shift_predictor, step)
 
-    def train(self, G, deformator, shift_predictor):
+    def log_final(self, G, deformator, shift_predictor, step, avgs):
+        self.log_train(step, True, [avg.flush() for avg in avgs])
+        self.log_interpolation(G, deformator, step)
+        self.save_checkpoint(deformator, shift_predictor, step)
+        accuracy = self.log_accuracy(G, deformator, shift_predictor, step)
+        print('Step {} accuracy: {:.3}'.format(step, accuracy.item()))
+        self.save_models(deformator, shift_predictor, step)
+
+    def train(self, G, deformator, shift_predictor, multi_gpu=False):
         G.to(self.device).eval()
         deformator.to(self.device).train()
         shift_predictor.to(self.device).train()
 
-        deformator_opt = torch.optim.Adam(deformator.parameters(), lr=self.p.deformator_lr) if deformator.type not in [
-            DeformatorType.ID, DeformatorType.RANDOM] else None
+        deformator_opt = torch.optim.Adam(deformator.parameters(), lr=self.p.deformator_lr) \
+            if deformator.type not in [DeformatorType.ID, DeformatorType.RANDOM] else None
         shift_predictor_opt = torch.optim.Adam(
             shift_predictor.parameters(), lr=self.p.shift_predictor_lr)
 
-        avgs = MeanTracker('percent'), MeanTracker('loss'), MeanTracker('direction_loss'), MeanTracker('shift_loss')
+        avgs = MeanTracker('percent'), MeanTracker('loss'), MeanTracker('direction_loss'),\
+               MeanTracker('shift_loss')
         avg_correct_percent, avg_loss, avg_label_loss, avg_shift_loss = avgs
 
         recovered_step = self.start_from_checkpoint(deformator, shift_predictor)
@@ -190,7 +199,7 @@ class Trainer(object):
             logits, shift_prediction = shift_predictor(imgs, imgs_shifted)
             logit_loss = self.p.label_weight * self.cross_entropy(logits, target_indices)
             shift_loss = self.p.shift_weight * torch.mean(torch.abs(shift_prediction - shifts))
-
+            
             # total loss
             loss = logit_loss + shift_loss
             loss.backward()
@@ -201,23 +210,24 @@ class Trainer(object):
 
             # update statistics trackers
             avg_correct_percent.add(torch.mean(
-                (torch.argmax(logits, dim=1) == target_indices).to(torch.float32)).detach())
+                    (torch.argmax(logits, dim=1) == target_indices).to(torch.float32)).detach())
             avg_loss.add(loss.item())
             avg_label_loss.add(logit_loss.item())
             avg_shift_loss.add(shift_loss)
 
             self.log(G, deformator, shift_predictor, step, avgs)
+        self.log_final(G, deformator, shift_predictor, step, avgs)
 
 
 @torch.no_grad()
-def validate_classifier(G, deformator, shift_predictor, params_dict=None, trainer=None, device='cpu'):
+def validate_classifier(G, deformator, shift_predictor, params_dict=None, trainer=None):
     n_steps = 100
     if trainer is None:
         trainer = Trainer(params=Params(**params_dict), verbose=False)
 
     percents = torch.empty([n_steps])
     for step in range(n_steps):
-        z = make_noise(trainer.p.batch_size, G.dim_z, trainer.p.truncation).to(device)
+        z = make_noise(trainer.p.batch_size, G.dim_z, trainer.p.truncation).to(self.device)
         target_indices, shifts, basis_shift = trainer.make_shifts(deformator.input_dim)
 
         imgs = G(z)

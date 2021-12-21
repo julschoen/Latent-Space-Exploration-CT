@@ -22,7 +22,6 @@ class DeformatorType(Enum):
     PROJECTIVE = 5
     RANDOM = 6
 
-
 DEFORMATOR_TYPE_DICT = {
     'fc': DeformatorType.FC,
     'linear': DeformatorType.LINEAR,
@@ -32,11 +31,9 @@ DEFORMATOR_TYPE_DICT = {
     'random': DeformatorType.RANDOM,
 }
 
-
 class ShiftDistribution(Enum):
     NORMAL = 0,
     UNIFORM = 1,
-
 
 SHIFT_DISTRIDUTION_DICT = {
     'normal': ShiftDistribution.NORMAL,
@@ -70,12 +67,13 @@ def torch_expm(A):
     expmA = R[n_squarings, torch.arange(n_A)]
     return expmA[0]
 
-
 def make_noise(batch, dim, truncation=None):
     if isinstance(dim, int):
         dim = [dim]
-
-    return torch.randn([batch] + dim + [1, 1])
+    if truncation is None or truncation == 1.0:
+        return torch.randn([batch] + dim+[1,1])
+    else:
+        return torch.from_numpy(truncated_noise([batch] + dim, truncation)).to(torch.float)
 
 
 class MeanTracker(object):
@@ -94,18 +92,15 @@ class MeanTracker(object):
         self.values = []
         return self.name, mean
 
-
 def one_hot(dims, value, indx):
     vec = torch.zeros(dims)
     vec[indx] = value
     return vec
 
-
 def save_run_params(args):
     os.makedirs(args['out'], exist_ok=True)
     with open(os.path.join(args['out'], 'args.json'), 'w') as args_file:
         json.dump(args, args_file)
-
 
 def to_image(tensor, adaptive=False):
     if len(tensor.shape) == 4:
@@ -136,9 +131,9 @@ def torch_pade13(A):
     U = torch.matmul(A,
                      torch.matmul(A6, b[13] * A6 + b[11] * A4 + b[9] * A2) + b[7] * A6 + b[5] * A4 +
                      b[3] * A2 + b[1] * ident)
-    V = torch.matmul(A6, b[12] * A6 + b[10] * A4 + b[8] * A2) + b[6] * A6 + b[4] * A4 + b[2] * A2 + b[0] * ident
+    V = torch.matmul(A6, b[12] * A6 + b[10] * A4 + b[8] * A2) + b[6] * A6 + b[4] * A4 + b[2] * A2 +\
+        b[0] * ident
     return U, V
-
 
 def add_forward_with_shift(generator):
     def gen_shifted(self, z, shift, *args, **kwargs):
@@ -166,11 +161,11 @@ def fig_to_image(fig):
 
 
 @torch.no_grad()
-def interpolate(G, z, shifts_r, shifts_count, dim, deformator=None, with_central_border=False, device='cpu'):
+def interpolate(G, z, shifts_r, shifts_count, dim, deformator=None, with_central_border=False):
     shifted_images = []
     for shift in np.arange(-shifts_r, shifts_r + 1e-9, shifts_r / shifts_count):
         if deformator is not None:
-            latent_shift = deformator(one_hot(deformator.input_dim, shift, dim).to(device))
+            latent_shift = deformator(one_hot(deformator.input_dim, shift, dim).cuda())
         else:
             latent_shift = one_hot(G.dim_shift, shift, dim).cuda()
         shifted_image = G.gen_shifted(z, latent_shift).cpu()[0]
@@ -186,7 +181,7 @@ def add_border(tensor):
     for ch in range(tensor.shape[0]):
         color = 1.0 if ch == 0 else -1
         tensor[ch, :border, :] = color
-        tensor[ch, -border:, ] = color
+        tensor[ch, -border:,] = color
         tensor[ch, :, :border] = color
         tensor[ch, :, -border:] = color
     return tensor
@@ -195,12 +190,12 @@ def add_border(tensor):
 @torch.no_grad()
 def make_interpolation_chart(G, deformator=None, z=None,
                              shifts_r=10.0, shifts_count=5,
-                             dims=None, dims_count=10, texts=None, device='cpu', **kwargs):
+                             dims=None, dims_count=10, texts=None, **kwargs):
     with_deformation = deformator is not None
     if with_deformation:
         deformator_is_training = deformator.training
         deformator.eval()
-    z = z if z is not None else make_noise(1, G.dim_z).to(device)
+    z = z if z is not None else make_noise(1, G.dim_z).cuda()
 
     if with_deformation:
         original_img = G(z).cpu()
@@ -210,7 +205,7 @@ def make_interpolation_chart(G, deformator=None, z=None,
     if dims is None:
         dims = range(dims_count)
     for i in dims:
-        imgs.append(interpolate(G, z, shifts_r, shifts_count, i, deformator, device=device))
+        imgs.append(interpolate(G, z, shifts_r, shifts_count, i, deformator))
 
     rows_count = len(imgs) + 1
     fig, axs = plt.subplots(rows_count, **kwargs)
@@ -233,7 +228,7 @@ def make_interpolation_chart(G, deformator=None, z=None,
 
 
 @torch.no_grad()
-def inspect_all_directions(G, deformator, out_dir, zs=None, num_z=3, shifts_r=8.0, device='cpu'):
+def inspect_all_directions(G, deformator, out_dir, zs=None, num_z=3, shifts_r=8.0):
     os.makedirs(out_dir, exist_ok=True)
 
     step = 20
@@ -248,7 +243,7 @@ def inspect_all_directions(G, deformator, out_dir, zs=None, num_z=3, shifts_r=8.
             z = z.unsqueeze(0)
             fig = make_interpolation_chart(
                 G, deformator=deformator, z=z,
-                shifts_count=shifts_count, dims=dims, shifts_r=shifts_r, device=device,
+                shifts_count=shifts_count, dims=dims, shifts_r=shifts_r,
                 dpi=250, figsize=(int(shifts_count * 4.0), int(0.5 * step) + 2))
             fig.canvas.draw()
             plt.close(fig)
@@ -263,3 +258,4 @@ def inspect_all_directions(G, deformator, out_dir, zs=None, num_z=3, shifts_r=8.
         out_file = os.path.join(out_dir, '{}_{}.jpg'.format(dims[0], dims[-1]))
         print('saving chart to {}'.format(out_file))
         Image.fromarray(np.hstack(imgs)).save(out_file)
+        

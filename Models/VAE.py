@@ -97,6 +97,7 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, channels, ch = 64, z = 32):
         super(Decoder, self).__init__()
+        self.dim_z = z
         self.conv1 = Res_up(z, ch*16)
         self.conv12 = Res_up(ch*16, ch*8)
         self.conv2 = Res_up(ch*8, ch*8)
