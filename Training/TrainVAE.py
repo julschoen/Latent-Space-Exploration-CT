@@ -6,6 +6,11 @@ import torchvision
 from torch.utils.data import DataLoader
 import torchvision.utils as vutils
 import pytorch_fid_wrapper as FID
+import sys
+
+sys.path.append('../')
+sys.path.append('../Models')
+
 from Dataset import LIDC
 from Models.VAE import VAE
 
@@ -34,7 +39,7 @@ vae.to(device)
 criterion = LOGMSELoss()
 optimizer = torch.optim.Adam(vae.parameters(), lr=1e-4)
 
-beta = 1e-3 / (2 ** 5)
+beta = 0.01
 
 # Stats
 losses = []
@@ -43,59 +48,59 @@ fid = []
 fid_epoch = []
 
 iters = 0
-epochs = 30
+epochs = 50
 path = 'vae_log'
 
 print("Starting Training Loop...")
 for epoch in range(epochs):
-    if (epoch + 1) % 5 == 0:
-        beta = beta * 2
     for i, data in enumerate(generator_train):
         data = data.to(device)
 
         kl, pred = vae(data)
-        rec_loss = criterion(target=data, input=pred)
-        loss = beta * kl + rec_loss
+
+        rec_loss = criterion(target=data,input=pred)
+        loss = beta*kl + rec_loss
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        if i % 100 == 0:
+        if (iters % 500 == 0) or ((epoch == epochs) and (i == len(generator_train)-1)):
             with torch.no_grad():
                 fid.append(
                     FID.fid(
-                        pred.expand(-1, 3, -1, -1),
-                        real_images=data.expand(-1, 3, -1, -1)
+                        pred.expand(-1,3,-1,-1), 
+                        real_images=data.expand(-1,3,-1,-1)
+                        )
                     )
-                )
+            
             l = loss.item()
             losses.append(l)
             print('[%d/%d][%d/%d]\tRec Loss: %.4f\tKL Divergence: %.4f\tKL %.4f\tFID: %.4f'
-                  % (epoch + 1, epochs, i, len(generator_train), rec_loss, beta * kl, kl, fid[-1]))
-
-        if (iters % 500 == 0) or ((epoch == epochs) and (i == len(generator_train) - 1)):
+                    % (epoch+1, epochs, i, len(generator_train),rec_loss,beta*kl, kl,fid[-1]))
+            _, z = vae.encoder(data)
+            print(f'Z Mean: {z.mean()}, Std: {z.std()}')
             torchvision.utils.save_image(
                 vutils.make_grid(pred, padding=2, normalize=True)
                 , os.path.join(path, f'{iters}.png'))
+        elif i % 100 == 0:
+            l = loss.item()
+            losses.append(l)
+            print('[%d/%d][%d/%d]\tRec Loss: %.4f\tKL Divergence: %.4f\tKL %.4f'
+                    % (epoch+1, epochs, i, len(generator_train),rec_loss,beta*kl, kl))
 
         iters += 1
-
+    
     fid_epoch.append(np.array(fid).mean())
-    fid = []
+    fid = []    
     torch.save({
         'epoch': epoch,
         'state_dict': vae.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': losses,
         'fid': fid_epoch,
-    }, os.path.join(path, 'checkpoint.pt'))
+        }, os.path.join(path, 'checkpoint.pt'))
 
-print('...Done')
-
-checkpoint = torch.load(os.path.join(path, 'checkpoint.pt'))
-vae.load_state_dict(checkpoint['state_dict'])
-vae.eval()
 
 torch.save({
     'state_dict': vae.decoder.state_dict(),
@@ -103,3 +108,5 @@ torch.save({
 torch.save({
     'state_dict': vae.encoder.state_dict(),
 }, os.path.join(path, 'encoder.pt'))
+
+print('...Done')

@@ -65,7 +65,7 @@ class LatentDeformator(nn.Module):
 
             out = self.fc4(x) + input
         elif self.type == DeformatorType.LINEAR:
-            out = self.linear(input)
+            out  = self.linear(input)
         elif self.type == DeformatorType.PROJECTIVE:
             input_norm = torch.norm(input, dim=1, keepdim=True)
             out = self.linear(input)
@@ -76,7 +76,7 @@ class LatentDeformator(nn.Module):
         elif self.type == DeformatorType.RANDOM:
             self.linear = self.linear.to(input.device)
             out = F.linear(input, self.linear)
-
+            
         flat_shift_dim = np.product(self.shift_dim)
         if out.shape[1] < flat_shift_dim:
             padding = torch.zeros([out.shape[0], flat_shift_dim - out.shape[1]], device=out.device)
@@ -90,4 +90,14 @@ class LatentDeformator(nn.Module):
         except Exception:
             pass
 
-        return out.reshape(-1, self.input_dim, 1, 1)
+        return out.reshape(-1,self.out_dim,1,1)
+
+
+def normal_projection_stat(x):
+    x = x.view([x.shape[0], -1])
+    direction = torch.randn(x.shape[1], requires_grad=False, device=x.device)
+    direction = direction / torch.norm(direction)
+    projection = torch.matmul(x, direction)
+
+    std, mean = torch.std_mean(projection)
+    return std, mean

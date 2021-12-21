@@ -1,6 +1,11 @@
 import torch
 import os
 import matplotlib
+import sys
+
+sys.path.append('../')
+sys.path.append('../Models')
+
 from Models.DCGAN import make_gan
 from Models.VAE import make_vae
 from Models.Deformator import LatentDeformator

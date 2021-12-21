@@ -3,6 +3,18 @@
 * Both a DCGAN and a Res-Net based CNN-VAE are implemented
 * Model agnostic unsuperivesided exploration of the latent space of a generative model [2]
 
+# How To Run
+* Download the Data from https://www.cancerimagingarchive.net
+* Using the resulting folder structure run [preprocessing](preprocess.py)
+* Train [GAN](Training/TrainGAN.py) and/or [VAE](Training/TrainVAE.py)
+* Train [Direction Model](Training/TrainDirections.py) on desired generator
+* [Evaluate Directions](EvalDirections.py)
+
+# Results
+* We see non-trivial image transformations on medical images.
+* Many such directions are provided in [Animations](Animations)
+* Some examples are the following: (TBD)
+
 # Credits
 The VAE implementation is based on https://github.com/LukeDitria/CNN-VAE  
 The Latent Direction Discovery is based on https://github.com/anvoynov/GANLatentDiscovery

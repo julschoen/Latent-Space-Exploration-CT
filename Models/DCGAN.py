@@ -7,7 +7,7 @@ from Models.utils import gan_with_shift
 nc = 1
 
 # Size of z latent vector
-nz = 100
+nz = 32
 
 # Size of feature maps in generator
 ngf = 128

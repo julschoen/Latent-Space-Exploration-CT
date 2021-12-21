@@ -54,38 +54,24 @@ def save_hook(module, input, output):
 
 
 class ResNetShiftPredictor(nn.Module):
-    def __init__(self, dim, downsample=None):
+    def __init__(self, dim):
         super(ResNetShiftPredictor, self).__init__()
         self.features_extractor = resnet18(pretrained=False)
         self.features_extractor.conv1 = nn.Conv2d(
-            2, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            2, 64,kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         nn.init.kaiming_normal_(self.features_extractor.conv1.weight,
                                 mode='fan_out', nonlinearity='relu')
 
         self.features = self.features_extractor.avgpool
         self.features.register_forward_hook(save_hook)
-        self.downsample = downsample
 
         # half dimension as we expect the model to be symmetric
         self.type_estimator = nn.Linear(512, np.product(dim))
         self.shift_estimator = nn.Linear(512, 1)
 
     def forward(self, x1, x2):
-        x1 = (x1 + 1) / 2
-        x2 = (x1 + 1) / 2
-
-        mean = 0.456
-        std = 0.224
-
-        x1 = (x1 - mean) / std
-        x2 = (x2 - mean) / std
-
-        m = nn.modules.upsampling.Upsample((224, 224), mode='bicubic')
-        x1 = m(x1)
-        x2 = m(x2)
         batch_size = x1.shape[0]
-        if self.downsample is not None:
-            x1, x2 = F.interpolate(x1, self.downsample), F.interpolate(x2, self.downsample)
+   
         self.features_extractor(torch.cat([x1, x2], dim=1))
         features = self.features.output.view([batch_size, -1])
 

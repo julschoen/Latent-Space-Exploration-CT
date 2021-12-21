@@ -7,6 +7,10 @@ import torchvision
 from torch.utils.data import DataLoader
 import torchvision.utils as vutils
 import pytorch_fid_wrapper as FID
+import sys
+
+sys.path.append('../')
+sys.path.append('../Models')
 
 from Dataset import LIDC
 from Models.DCGAN import *
@@ -66,12 +70,12 @@ path = 'gan_log'
 
 print("Starting Training Loop...")
 for epoch in range(epochs):
-    if epoch < 25 and epoch % 5 == 0 and (not epoch == 0):
+    if epoch < 20 and epoch % 5 == 0 and (not epoch == 0):
         netD.std_reduce = netD.std_reduce + 10
-    elif epoch == 25:
+    elif epoch == 20:
         netD.std_reduce = 100
-    elif 25 < epoch < 31:
-        netD.std_reduce = netD.std_reduce * 4
+    elif 20 < epoch < 26:
+        netD.std_reduce = netD.std_reduce*4
     else:
         netD.noise = False
     for i, data in enumerate(generator_train, 0):
