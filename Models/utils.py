@@ -161,13 +161,13 @@ def fig_to_image(fig):
 
 
 @torch.no_grad()
-def interpolate(G, z, shifts_r, shifts_count, dim, deformator=None, with_central_border=False):
+def interpolate(G, z, shifts_r, shifts_count, dim, deformator=None, with_central_border=False, device='device'):
     shifted_images = []
     for shift in np.arange(-shifts_r, shifts_r + 1e-9, shifts_r / shifts_count):
         if deformator is not None:
-            latent_shift = deformator(one_hot(deformator.input_dim, shift, dim).cuda())
+            latent_shift = deformator(one_hot(deformator.input_dim, shift, dim).to(device))
         else:
-            latent_shift = one_hot(G.dim_shift, shift, dim).cuda()
+            latent_shift = one_hot(G.dim_shift, shift, dim).to(device)
         shifted_image = G.gen_shifted(z, latent_shift).cpu()[0]
         if shift == 0.0 and with_central_border:
             shifted_image = add_border(shifted_image)
@@ -190,12 +190,12 @@ def add_border(tensor):
 @torch.no_grad()
 def make_interpolation_chart(G, deformator=None, z=None,
                              shifts_r=10.0, shifts_count=5,
-                             dims=None, dims_count=10, texts=None, **kwargs):
+                             dims=None, dims_count=10, texts=None, device='cpu', **kwargs):
     with_deformation = deformator is not None
     if with_deformation:
         deformator_is_training = deformator.training
         deformator.eval()
-    z = z if z is not None else make_noise(1, G.dim_z).cuda()
+    z = z if z is not None else make_noise(1, G.dim_z).to(device)
 
     if with_deformation:
         original_img = G(z).cpu()
@@ -228,12 +228,12 @@ def make_interpolation_chart(G, deformator=None, z=None,
 
 
 @torch.no_grad()
-def inspect_all_directions(G, deformator, out_dir, zs=None, num_z=3, shifts_r=8.0):
+def inspect_all_directions(G, deformator, out_dir, zs=None, num_z=3, shifts_r=8.0, device='cpu'):
     os.makedirs(out_dir, exist_ok=True)
 
     step = 20
     max_dim = G.dim_shift
-    zs = zs if zs is not None else make_noise(num_z, G.dim_z).cuda()
+    zs = zs if zs is not None else make_noise(num_z, G.dim_z).to(device)
     shifts_count = zs.shape[0]
 
     for start in range(0, max_dim - 1, step):

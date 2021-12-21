@@ -42,7 +42,7 @@ args = {
     'out': 'save_location',
     'gen_path': 'gan_log/checkpoint.pt',
     'def_random_init': True,
-    'gen': 'gan'
+    'gen': 'gan',
     'n_steps': int(3e+3)
 }
 

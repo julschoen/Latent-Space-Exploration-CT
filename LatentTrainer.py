@@ -37,7 +37,7 @@ class Params(object):
 
 
 class Trainer(object):
-    def __init__(self, device, params=Params(), out_dir='', verbose=False):
+    def __init__(self, params=Params(), out_dir='', verbose=False, device='cpu'):
         if verbose:
             print('Trainer inited with:\n{}'.format(str(params.__dict__)))
         self.p = params
@@ -220,14 +220,14 @@ class Trainer(object):
 
 
 @torch.no_grad()
-def validate_classifier(G, deformator, shift_predictor, params_dict=None, trainer=None):
+def validate_classifier(G, deformator, shift_predictor, params_dict=None, trainer=None, device='cpu'):
     n_steps = 100
     if trainer is None:
         trainer = Trainer(params=Params(**params_dict), verbose=False)
 
     percents = torch.empty([n_steps])
     for step in range(n_steps):
-        z = make_noise(trainer.p.batch_size, G.dim_z, trainer.p.truncation).to(self.device)
+        z = make_noise(trainer.p.batch_size, G.dim_z, trainer.p.truncation).to(trainer.device)
         target_indices, shifts, basis_shift = trainer.make_shifts(deformator.input_dim)
 
         imgs = G(z)
