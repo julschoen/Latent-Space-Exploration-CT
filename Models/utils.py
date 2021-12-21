@@ -258,4 +258,41 @@ def inspect_all_directions(G, deformator, out_dir, zs=None, num_z=3, shifts_r=8.
         out_file = os.path.join(out_dir, '{}_{}.jpg'.format(dims[0], dims[-1]))
         print('saving chart to {}'.format(out_file))
         Image.fromarray(np.hstack(imgs)).save(out_file)
+
+def load_from_dir(root_dir, G, model_index=None, shift_in_w=True, device='cpu'):
+    args = json.load(open(os.path.join(root_dir, 'args.json')))
+    args['w_shift'] = shift_in_w
+
+    models_dir = os.path.join(root_dir, 'models')
+    if model_index is None:
+        models = os.listdir(models_dir)
+        model_index = max(
+            [int(name.split('.')[0].split('_')[-1]) for name in models
+             if name.startswith('deformator')])
+
+    if 'resolution' not in args.keys():
+        args['resolution'] = 128
+
+    deformator = LatentDeformator(
+        shift_dim=G.dim_shift,
+        input_dim=args['directions_count'] if 'directions_count' in args.keys() else None,
+        out_dim=args['max_latent_dim'] if 'max_latent_dim' in args.keys() else None,
+        type=DEFORMATOR_TYPE_DICT[args['deformator']])
+
+    if 'shift_predictor' not in args.keys() or args['shift_predictor'] == 'ResNet':
+        shift_predictor = ResNetShiftPredictor(G.dim_shift)
+    elif args['shift_predictor'] == 'LeNet':
+        shift_predictor = LeNetShiftPredictor(
+            deformator.input_dim, 1)
+
+    deformator_model_path = os.path.join(models_dir, 'deformator_{}.pt'.format(model_index))
+    shift_model_path = os.path.join(models_dir, 'shift_predictor_{}.pt'.format(model_index))
+    if os.path.isfile(deformator_model_path):
+        deformator.load_state_dict(
+            torch.load(deformator_model_path, map_location=torch.device('cpu')))
+    if os.path.isfile(shift_model_path):
+        shift_predictor.load_state_dict(
+            torch.load(shift_model_path, map_location=torch.device('cpu')))
+
+    return deformator.eval().to(device), G.eval().to(device), shift_predictor.eval().to(device)
         

@@ -13,7 +13,28 @@
 # Results
 * We see non-trivial image transformations on medical images.
 * Many such directions are provided in [Animations](Animations)
-* Some examples are the following: (TBD)
+* Some examples are the following:
+Here are some examples of generated images manipulation by moving along discovered directions:
+
+![An image](./Animations/examples/z_position.gif)
+
+_VAE - z-Position_
+
+![An image](./Animations/examples/y_position.gif)
+
+_VAE - y-Position_
+
+![An image](./Animations/examples/breast.gif)
+
+_DCGAN - Breast Size_
+
+![An image](./Animations/examples/rotation.gif)
+
+_DCGAN - Rotation_
+
+![An image](./Animations/examples/thickness.gif)
+
+_DCGAN - Thickness_
 
 # Credits
 The VAE implementation is based on https://github.com/LukeDitria/CNN-VAE  
