@@ -67,6 +67,8 @@ iters = 0
 epochs = 30
 sig = nn.Sigmoid()
 path = 'gan_log'
+if not os.path.exists(path):
+    os.makedirs(path)
 
 print("Starting Training Loop...")
 for epoch in range(epochs):
