@@ -161,7 +161,7 @@ def fig_to_image(fig):
 
 
 @torch.no_grad()
-def interpolate(G, z, shifts_r, shifts_count, dim, deformator=None, with_central_border=False, device='device'):
+def interpolate(G, z, shifts_r, shifts_count, dim, deformator=None, with_central_border=False, device='cpu'):
     shifted_images = []
     for shift in np.arange(-shifts_r, shifts_r + 1e-9, shifts_r / shifts_count):
         if deformator is not None:
