@@ -14,6 +14,7 @@
 * We see non-trivial image transformations on medical images.
 * Many such directions are provided in [Animations](Animations)
 * Some examples are the following:
+
 ![An image](./Animations/examples/z_position.gif)
 
 _VAE - z-Position_
