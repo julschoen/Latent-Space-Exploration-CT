@@ -35,7 +35,7 @@ def load_from_dir(root_dir, G, model_index=None, shift_in_w=True, device='cpu'):
         type=DEFORMATOR_TYPE_DICT[args['deformator']])
 
     if 'shift_predictor' not in args.keys() or args['shift_predictor'] == 'ResNet':
-        shift_predictor = ResNetShiftPredictor(G.dim_shift)
+        shift_predictor = ResNetShiftPredictor(deformator.input_dim)
     elif args['shift_predictor'] == 'LeNet':
         shift_predictor = LeNetShiftPredictor(
             deformator.input_dim, 1)
