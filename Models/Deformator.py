@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 from torch.nn import functional as F
 
-from Models.utils import DeformatorType, torch_expm
+from utils import DeformatorType, torch_expm
 
 
 class LatentDeformator(nn.Module):

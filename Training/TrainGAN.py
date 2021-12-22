@@ -64,7 +64,7 @@ FID.set_config(device=device)
 fid = []
 fid_epoch = []
 iters = 0
-epochs = 30
+epochs = 50
 sig = nn.Sigmoid()
 path = 'gan_log'
 if not os.path.exists(path):

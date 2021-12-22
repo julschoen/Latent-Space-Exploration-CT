@@ -4,12 +4,53 @@ import torchvision.utils as vutils
 from matplotlib import pyplot as plt
 import json
 import os
+import sys
 
-from Models.utils import to_image, interpolate, DEFORMATOR_TYPE_DICT, load_from_dir
+sys.path.append('./Models')
+
+from Models.utils import to_image, interpolate, DEFORMATOR_TYPE_DICT
 from Models.Deformator import LatentDeformator
 from Models.DCGAN import make_gan
 from Models.VAE import make_vae
 from Models.ShiftPredictor import LeNetShiftPredictor, ResNetShiftPredictor
+
+def load_from_dir(root_dir, G, model_index=None, shift_in_w=True, device='cpu'):
+    args = json.load(open(os.path.join(root_dir, 'args.json')))
+    args['w_shift'] = shift_in_w
+
+    models_dir = os.path.join(root_dir, 'models')
+    if model_index is None:
+        models = os.listdir(models_dir)
+        model_index = max(
+            [int(name.split('.')[0].split('_')[-1]) for name in models
+             if name.startswith('deformator')])
+
+    if 'resolution' not in args.keys():
+        args['resolution'] = 128
+
+    deformator = LatentDeformator(
+        shift_dim=G.dim_shift,
+        input_dim=args['directions_count'] if 'directions_count' in args.keys() else None,
+        out_dim=args['max_latent_dim'] if 'max_latent_dim' in args.keys() else None,
+        type=DEFORMATOR_TYPE_DICT[args['deformator']])
+
+    if 'shift_predictor' not in args.keys() or args['shift_predictor'] == 'ResNet':
+        shift_predictor = ResNetShiftPredictor(G.dim_shift)
+    elif args['shift_predictor'] == 'LeNet':
+        shift_predictor = LeNetShiftPredictor(
+            deformator.input_dim, 1)
+
+    deformator_model_path = os.path.join(models_dir, 'deformator_{}.pt'.format(model_index))
+    shift_model_path = os.path.join(models_dir, 'shift_predictor_{}.pt'.format(model_index))
+    if os.path.isfile(deformator_model_path):
+        deformator.load_state_dict(
+            torch.load(deformator_model_path, map_location=torch.device('cpu')))
+    if os.path.isfile(shift_model_path):
+        shift_predictor.load_state_dict(
+            torch.load(shift_model_path, map_location=torch.device('cpu')))
+
+    return deformator.eval().to(device), G.eval().to(device), shift_predictor.eval().to(device)
+        
 
 gpu = torch.cuda.is_available()
 device = torch.device("cuda" if gpu else "cpu")
@@ -19,7 +60,7 @@ gen = 'vae'
 # Path to generator checkpoint
 gen_path = 'Training/vae_log/decoder.pt'
 # Path to latent direction log
-latent_log = 'Training/LeNetProj/'
+latent_log = 'Training/save_location/'
 
 if gen == 'gan':
     G = make_gan(gen_path)
