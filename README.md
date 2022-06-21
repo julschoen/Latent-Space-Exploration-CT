@@ -1,7 +1,7 @@
 # Interpreting Latent Spaces of Generative Models for Medical Images using Unsupervised Methods
 * Data: LIDC [1]
-* Both a DCGAN and a Res-Net based CNN-VAE are implemented
-* Model agnostic unsuperivesided exploration of the latent space of a generative model [2]
+* Implementation of a DCGAN and a Res-Net based CNN-VAE
+* Model agnostic unsupervised exploration of the latent space of a generative model [2]
 
 # How To Run
 * Download the Data from https://www.cancerimagingarchive.net
