@@ -1,16 +1,17 @@
 # Interpreting Latent Spaces of Generative Models for Medical Images using Unsupervised Methods
+Authors implementation of [_Interpreting Latent Spaces of Generative Models for Medical Images Using Unsupervised Methods_](https://arxiv.org/abs/2207.09740) (DGM4MICCAI 2022)
 * Data: LIDC [1]
 * Implementation of a DCGAN and a Res-Net based CNN-VAE
 * Model agnostic unsupervised exploration of the latent space of a generative model [2]
 
-# How To Run
+## How To Run
 * Download the Data from https://www.cancerimagingarchive.net
 * Using the resulting folder structure run [preprocessing](preprocess.py)
 * Train [GAN](Training/TrainGAN.py) and/or [VAE](Training/TrainVAE.py)
 * Train [Direction Model](Training/TrainDirections.py) on desired generator
 * [Evaluate Directions](EvalDirections.py)
 
-# Results
+## Results
 * We see non-trivial image transformations on medical images.
 * Many such directions are provided in [Animations](Animations)
 * Some examples are the following:
@@ -35,7 +36,23 @@ _DCGAN - Rotation_
 
 _DCGAN - Thickness_
 
-# Credits
+## Citation
+
+```
+@InProceedings{schon22interpreting,
+author="Sch{\"o}n, Julian
+and Selvan, Raghavendra
+and Petersen, Jens",
+title="Interpreting Latent Spaces of Generative Models for Medical Images Using Unsupervised Methods",
+booktitle="Deep Generative Models",
+year="2022",
+publisher="Springer Nature Switzerland",
+pages="24--33",
+isbn="978-3-031-18576-2"
+}
+```
+
+## Credits
 The VAE implementation is based on https://github.com/LukeDitria/CNN-VAE  
 The Latent Direction Discovery is based on https://github.com/anvoynov/GANLatentDiscovery
 
